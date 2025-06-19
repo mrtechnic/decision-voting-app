@@ -1,24 +1,25 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import DecisionRoom from '../models/DecisionRoom';
 import { generateRoomId, getVoterIdentifier } from '../utils/helpers';
+import { AuthRequest } from '../middlewares/authMiddleware';
 
-export const createRoom = async (req: any, res: Response): Promise<void> => {
+export const createRoom = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { title, description, options, deadline } = req.body;
 
     if (!title || !description || !options || !deadline) {
       res.status(400).json({ error: 'All fields are required' });
-      return 
+      return;
     }
 
     if (options.length < 2 || options.length > 5) {
-       res.status(400).json({ error: 'Must have 2–5 options' });
-       return 
+      res.status(400).json({ error: 'Must have 2–5 options' });
+      return;
     }
 
     if (new Date(deadline) <= new Date()) {
       res.status(400).json({ error: 'Deadline must be in the future' });
-      return 
+      return;
     }
 
     const roomId = generateRoomId();
@@ -58,14 +59,14 @@ export const createRoom = async (req: any, res: Response): Promise<void> => {
   }
 };
 
-export const getRoomById = async (req: Request, res: Response): Promise<void> => {
+export const getRoomById = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { roomId } = req.params;
     const room = await DecisionRoom.findOne({ roomId }).populate('creator', 'username');
 
     if (!room) {
       res.status(404).json({ error: 'Room not found' });
-      return
+      return;
     }
 
     const voterIdentifier = getVoterIdentifier(req);
@@ -93,37 +94,37 @@ export const getRoomById = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-export const voteInRoom = async (req: Request, res: Response): Promise<void> => {
+export const voteInRoom = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { roomId } = req.params;
     const { optionId } = req.body;
 
     if (!optionId) {
       res.status(400).json({ error: 'Option ID is required' });
-      return
+      return;
     }
 
     const room = await DecisionRoom.findOne({ roomId });
     if (!room) {
       res.status(404).json({ error: 'Room not found' });
-      return
+      return;
     }
 
     if (!room.deadline || new Date() > room.deadline) {
       res.status(400).json({ error: 'Voting has ended' });
-      return
+      return;
     }
 
     const voterIdentifier = getVoterIdentifier(req);
     if (room.voters.includes(voterIdentifier)) {
       res.status(400).json({ error: 'You have already voted in this room' });
-      return
+      return;
     }
 
     const optionIndex = room.options.findIndex(option => option.id === optionId);
     if (optionIndex === -1) {
       res.status(400).json({ error: 'Invalid option' });
-      return
+      return;
     }
 
     room.options[optionIndex].votes += 1;
@@ -141,7 +142,7 @@ export const voteInRoom = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-export const getUserRooms = async (req: any, res: Response) => {
+export const getUserRooms = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const rooms = await DecisionRoom.find({ creator: req.user._id }).sort({ createdAt: -1 });
 
@@ -164,19 +165,19 @@ export const getUserRooms = async (req: any, res: Response) => {
   }
 };
 
-export const getResults = async (req: any, res: Response): Promise<void> => {
+export const getResults = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { roomId } = req.params;
     const room = await DecisionRoom.findOne({ roomId });
 
     if (!room) {
       res.status(404).json({ error: 'Room not found' });
-      return 
+      return;
     }
 
     if (room.creator.toString() !== req.user._id.toString()) {
       res.status(403).json({ error: 'Only room creator can view results' });
-      return 
+      return;
     }
 
     const totalVotes = room.options.reduce((sum, option) => sum + option.votes, 0);

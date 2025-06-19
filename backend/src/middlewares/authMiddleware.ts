@@ -5,10 +5,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+export interface AuthRequest extends Request {
+  user?: any; 
+}
+
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
 export const authenticateToken = async (
-  req: any,
+  req: AuthRequest, // ✅ use the type here
   res: Response,
   next: NextFunction
 ): Promise<void> => {
