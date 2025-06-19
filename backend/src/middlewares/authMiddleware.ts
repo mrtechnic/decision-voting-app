@@ -3,21 +3,32 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import dotenv from 'dotenv';
 
-
 dotenv.config();
-
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
-export const authenticateToken = async (req: any, res: Response, next: NextFunction) => {
+export const authenticateToken = async (
+  req: any,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Token required' });
+
+  if (!token) {
+    res.status(401).json({ error: 'Token required' });
+    return;
+  }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     const user = await User.findById(decoded.userId);
-    if (!user) return res.status(403).json({ error: 'Invalid token' });
+
+    if (!user) {
+      res.status(403).json({ error: 'Invalid token' });
+      return;
+    }
+
     req.user = user;
     next();
   } catch {

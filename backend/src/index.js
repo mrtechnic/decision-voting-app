@@ -1,21 +1,13 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const dotenv = require("dotenv");
+import app from './app';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+
 
 dotenv.config();
 
 
-
-const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(express.json());
-
-// Routes (test route)
-app.get("/", (req, res) => {
-  res.send("🎉 API is running...");
-});
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
