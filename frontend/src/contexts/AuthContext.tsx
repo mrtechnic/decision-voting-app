@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '../types/index';
 import type { AuthState } from '../types/index';
-import { api } from '../utils/api';
+import { signin, signup } from '../utils/api';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
@@ -43,8 +43,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await api.post('/auth/login', { email, password });
-      const { token: newToken, user: newUser } = response.data;
+      const response = await signin(email, password)
+      const { token: newToken, user: newUser } = response;
 
       setToken(newToken);
       setUser(newUser);
@@ -55,9 +55,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (email: string, password: string, username: string) => {
     try {
-      const response = await api.post('/auth/register', { email, password, name });
+      const response = await signup(email, password, username)
       const { token: newToken, user: newUser } = response.data;
 
       setToken(newToken);
