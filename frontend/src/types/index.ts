@@ -5,21 +5,16 @@ export interface User {
 }
 
 export interface Room {
-  _id: string;
+  id: string;
   title: string;
   description: string;
   options: string[];
   deadline: string;
-  creator: {
-    _id: string;
-    name: string;
-  };
-  inviteCode: string;
-  createdAt: string;
-  isActive: boolean;
-  voteCounts?: Record<string, number>;
-  totalVotes?: number;
-  hasVoted?: boolean;
+  roomId: string;
+  tallies?: number[];
+  totalVotes: number;
+  isExpired: boolean;
+  creatorEmail?: string;
 }
 
 export interface AuthState {
