@@ -1,6 +1,5 @@
 import { Response } from 'express';
 import crypto from 'crypto';
-import { validationResult } from 'express-validator';
 import { Room } from '../models/Room';
 import { Vote } from '../models/Vote';
 import { AuthRequest } from '../middlewares/authMiddleware';
@@ -17,12 +16,6 @@ const createVoterFingerprint = (req: AuthRequest): string => {
 
 export const castVote = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({ errors: errors.array() });
-      return;
-    }
-
     const { inviteCode } = req.params;
     const { option } = req.body;
 
