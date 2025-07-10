@@ -137,7 +137,7 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({ roomId, on
           return (
             <div key={index} className="border rounded-lg p-4">
               <div className="flex justify-between items-center mb-2">
-                <span className="font-medium">{option}</span>
+                <span className="font-medium">{option.text}</span>
                 {showResults && (
                   <span className="text-sm text-gray-500">
                     {voteCount} votes ({percentage.toFixed(1)}%)

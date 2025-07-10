@@ -9,7 +9,10 @@ export interface AuthContextType extends AuthState {
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  isAuthenticated: boolean;
 }
+
+
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -30,16 +33,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+useEffect(() => {
+  const storedToken = localStorage.getItem('token');
+  const storedUser = localStorage.getItem('user');
 
-    if (storedToken && storedUser) {
+  if (storedToken && storedUser && storedUser !== 'undefined') {
+    try {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
+    } catch (err) {
+      console.error("Failed to parse stored user:", err);
+      localStorage.removeItem('user'); // cleanup invalid data
     }
-    setLoading(false);
-  }, []);
+  }
+
+  setLoading(false);
+}, []);
+
 
   const login = async (email: string, password: string) => {
     try {
@@ -51,21 +61,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('token', newToken);
       localStorage.setItem('user', JSON.stringify(newUser));
     } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Login failed');
+      throw new Error(error?.error || error?.message || 'Login failed');
     }
   };
 
-  const register = async (email: string, password: string, username: string) => {
+  const register = async (email: string, password: string, name: string) => {
     try {
-      const response = await signup(email, password, username)
-      const { token: newToken, user: newUser } = response.data;
+      const { token: newToken, user: newUser } = await signup(email, password, name);
 
       setToken(newToken);
       setUser(newUser);
       localStorage.setItem('token', newToken);
       localStorage.setItem('user', JSON.stringify(newUser));
     } catch (error: any) {
-      throw new Error(error.response?.data?.error || 'Registration failed');
+      throw new Error(error.error || error?.message || 'Registration failed');
     }
   };
 

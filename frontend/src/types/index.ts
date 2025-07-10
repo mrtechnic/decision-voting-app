@@ -4,11 +4,18 @@ export interface User {
   username: string;
 }
 
+export type Option = {
+  id?: string;
+  text: string;
+  votes?: number;
+  _id?: string;
+};
+
 export interface Room {
   id: string;
   title: string;
   description: string;
-  options: string[];
+  options: Option[];
   deadline: string;
   roomId: string;
   tallies?: number[];

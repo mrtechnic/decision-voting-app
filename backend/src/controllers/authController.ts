@@ -8,8 +8,8 @@ const JWT_SECRET = process.env.JWT_SECRET as string;
 export const register = async (req: Request, res: Response): Promise<void> => {
   console.log("register controller ran")
   try {
-    const { username, email, password } = req.body;
-    if (!username || !email || !password){
+    const { name, email, password } = req.body;
+    if (!name || !email || !password){
      res.status(400).json({error: 'All fields are required'});
       return 
     }
@@ -22,11 +22,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = new User({
-      username,
-      email,
-      password: hashedPassword,
-    });
+const user = new User({
+  name,
+  email,
+  password, 
+});
+
 
     await user.save();
 
@@ -60,7 +61,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1d' });
 
-    res.json({ token, user: { id: user?._id, name: user?.username, email: user?.email } });
+    res.json({ token, user: { id: user?._id, name: user?.name, email: user?.email } });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Server error' });

@@ -15,14 +15,25 @@ const authHeader = (token?: string) =>
 
 
 export const signin = async (email: string, password: string) => {
-  const response = await api.post('/auth/login', { email, password });
+  try {
+      const response = await api.post('/auth/login', { email, password });
   return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: 'SOmething went wrong'};
+  }
+
 };
 
-export const signup = async (email: string, password: string, username: string) => {
-  const response = await api.post('/auth/register', { email, password, username });
-  return response.data;
+export const signup = async (email: string, password: string, name: string) => {
+  try {
+    const response = await api.post('/auth/register', { email, password, name });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: 'Something went wrong' };
+  }
 };
+
+
 
 
 export const createRoom = async (roomData: any, token: string) => {
@@ -53,7 +64,7 @@ export const vote = async (
 };
 
 export const getMyRooms = async (token: string) => {
-  const response = await api.get('/my-rooms', {
+  const response = await api.get('/rooms/my-rooms', {
     headers: authHeader(token),
   });
   return response.data;
@@ -65,5 +76,7 @@ export const getLiveTallies = async (roomId: string, token: string) => {
   });
   return response.data;
 };
+
+export default api
 
 

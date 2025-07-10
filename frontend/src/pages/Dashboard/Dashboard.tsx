@@ -4,19 +4,8 @@ import { Plus, Users } from "lucide-react";
 import RoomView from '../../components/RoomView'
 import RoomCard from "../../components/RoomCard";
 import CreateRoomForm from "../../components/CreateRoomForm";
-
-export interface Room {
-  id: string;
-  title: string;
-  description: string;
-  options: string[];
-  deadline: string;
-  roomId: string;
-  tallies?: number[];
-  totalVotes: number;
-  isExpired: boolean;
-  creatorEmail?: string;
-}
+import { getMyRooms } from "../../utils/api";
+import type { Room } from "../../types";
 
 
 
@@ -35,7 +24,7 @@ const Dashboard: React.FC = () => {
     
     setLoading(true);
     try {
-      const result = await api.getMyRooms(token);
+      const result = await getMyRooms(token);
       setRooms(result.rooms);
     } catch (err) {
       console.error('Failed to load rooms:', err);
