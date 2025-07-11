@@ -116,12 +116,14 @@ export const voteInRoom = async (req: AuthRequest, res: Response): Promise<void>
     }
 
     const voterIdentifier = getVoterIdentifier(req);
+
+    
     if (room.voters.includes(voterIdentifier)) {
       res.status(400).json({ error: 'You have already voted in this room' });
       return;
     }
 
-    const optionIndex = room.options.findIndex(option => option.id === optionId);
+    const optionIndex = room.options.findIndex((option) => option.id === optionId);
     if (optionIndex === -1) {
       res.status(400).json({ error: 'Invalid option' });
       return;

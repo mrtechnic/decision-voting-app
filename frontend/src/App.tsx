@@ -7,6 +7,7 @@ import { useContext } from "react";
 import { AuthContext } from "./contexts/AuthContext";
 import { Vote } from "lucide-react";
 import { Link } from "react-router";
+import RoomView from "./components/RoomView";
 
 
 function App() {
@@ -14,35 +15,38 @@ function App() {
   const logout = context?.logout;
   const isAuthenticated = context?.isAuthenticated ?? false;
 
-  return (
+ return (
     <div className="min-h-screen bg-gray-50">
       <Routes>
-        {/* Public routes */}
-        {!isAuthenticated && (
-          <>
-            <Route
-              path="/"
-              element={<Navigate to="/login" />}
+        {/* ✅ Public Room Route */}
+        <Route
+          path="/room/:roomId"
+          element={
+            <RoomView
+              roomId={window.location.pathname.split("/room/")[1] || ""}
+              onBack={() => window.history.back()}
             />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-          </>
-        )}
+          }
+        />
 
-        {/* Protected route */}
-        {isAuthenticated && (
-          <Route
-            path="/dashboard"
-            element={
+        {/* Auth Routes */}
+        <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
+        <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
+
+        {/* Dashboard - Protected */}
+        <Route
+          path="/dashboard"
+          element={
+            isAuthenticated ? (
               <>
                 <header className="bg-white shadow-sm border-b">
                   <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                       <Vote className="text-blue-600" size={32} />
-                      <Link to='/'>
-                      <h1 className="text-xl font-bold text-gray-900">
-                       Vote App
-                      </h1>
+                      <Link to="/">
+                        <h1 className="text-xl font-bold text-gray-900">
+                          Vote App
+                        </h1>
                       </Link>
                     </div>
                     <button
@@ -57,12 +61,13 @@ function App() {
                   <Dashboard />
                 </main>
               </>
-            }
-          />   
-                 
-        )}
-        
-        {/* Catch-all fallback */}
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+
+        {/* Default fallback */}
         <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
       </Routes>
     </div>
