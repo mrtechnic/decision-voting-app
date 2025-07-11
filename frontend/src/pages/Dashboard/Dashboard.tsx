@@ -55,8 +55,8 @@ const Dashboard: React.FC = () => {
     <div className="max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Decision Rooms</h1>
-          <p className="text-gray-600">Welcome back, {user?.email}</p>
+          <h1 className="text-3xl font-bold text-gray-900">My Situation Rooms</h1>
+          <p className="text-gray-600">Welcome back, {user?.name}</p>
         </div>
         <button
           onClick={() => setShowCreateForm(true)}
@@ -75,7 +75,7 @@ const Dashboard: React.FC = () => {
         <div className="text-center py-12">
           <Users size={48} className="mx-auto text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No rooms yet</h3>
-          <p className="text-gray-600 mb-4">Create your first decision room to get started!</p>
+          <p className="text-gray-600 mb-4">Create your first Situation room to get started!</p>
           <button
             onClick={() => setShowCreateForm(true)}
             className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"

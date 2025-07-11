@@ -5,6 +5,7 @@ import {
   voteInRoom,
   getUserRooms,
   getResults,
+  getLiveTallies,
 } from '../controllers/roomController';
 import { authenticateToken } from '../middlewares/authMiddleware';
 
@@ -15,5 +16,7 @@ router.get('/my-rooms', authenticateToken, getUserRooms);
 router.get('/:roomId', getRoomById);
 router.post('/:roomId/vote', voteInRoom);
 router.get('/:roomId/results', authenticateToken, getResults);
+router.get('/:roomId/tallies', authenticateToken, getLiveTallies);
+
 
 export default router;

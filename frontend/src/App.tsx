@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import { useContext } from "react";
 import { AuthContext } from "./contexts/AuthContext";
 import { Vote } from "lucide-react";
+import { Link } from "react-router";
 
 
 function App() {
@@ -38,9 +39,11 @@ function App() {
                   <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                       <Vote className="text-blue-600" size={32} />
+                      <Link to='/'>
                       <h1 className="text-xl font-bold text-gray-900">
-                        DecisionVote
+                       Vote App
                       </h1>
+                      </Link>
                     </div>
                     <button
                       onClick={logout}

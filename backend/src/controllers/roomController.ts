@@ -62,7 +62,7 @@ export const createRoom = async (req: AuthRequest, res: Response): Promise<void>
 export const getRoomById = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { roomId } = req.params;
-    const room = await DecisionRoom.findOne({ roomId }).populate('creator', 'username');
+    const room = await DecisionRoom.findOne({ roomId }).populate('creator', 'name');
 
     if (!room) {
       res.status(404).json({ error: 'Room not found' });
@@ -199,3 +199,33 @@ export const getResults = async (req: AuthRequest, res: Response): Promise<void>
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+export const getLiveTallies = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { roomId } = req.params;
+
+  try {
+    const room = await DecisionRoom.findOne({ roomId }).populate('creator', 'email');
+
+    if (!room) {
+      res.status(404).json({ message: "Room not found" });
+      return 
+    }
+
+    const isExpired = room.deadline ? new Date() > room.deadline : false;
+
+    // Only allow creator to see live tallies before deadline
+    if (!isExpired && (room.creator as any).email !== req.user.email) {
+      res.status(403).json({ message: "Only creator can view live tallies" });
+      return 
+    }
+
+    const tallies = room.options.map((option) => option.votes || 0);
+    res.json({ tallies });
+    return 
+  } catch (err) {
+    console.error("Error fetching tallies:", err);
+    res.status(500).json({ message: "Server error" });
+    return 
+  }
+};
+

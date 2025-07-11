@@ -68,7 +68,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-4">Create Decision Room</h2>
+        <h2 className="text-2xl font-bold mb-4">Create Situation Room</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -99,7 +99,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Options (2-5)
+              Candidates (2-5)
             </label>
             {options.map((option, index) => (
               <div key={index} className="flex gap-2 mb-2">
@@ -107,7 +107,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
                   type="text"
                   value={option}
                   onChange={(e) => updateOption(index, e.target.value)}
-                  placeholder={`Option ${index + 1}`}
+                  placeholder='Enter Candidate'
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -129,7 +129,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
                 className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-md"
               >
                 <Plus size={16} />
-                Add Option
+                Add Candidate
               </button>
             )}
           </div>

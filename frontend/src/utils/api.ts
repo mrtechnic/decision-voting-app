@@ -50,12 +50,12 @@ export const getRoom = async (roomId: string) => {
 
 export const vote = async (
   roomId: string,
-  optionIndex: number,
+  optionId: string,
   token?: string
 ) => {
   const response = await api.post(
     `/rooms/${roomId}/vote`,
-    { optionIndex },
+    { optionId },
     {
       headers: authHeader(token),
     }
@@ -63,14 +63,14 @@ export const vote = async (
   return response.data;
 };
 
-export const getMyRooms = async (token: string) => {
+export const getMyRooms = async (token?: string) => {
   const response = await api.get('/rooms/my-rooms', {
     headers: authHeader(token),
   });
   return response.data;
 };
 
-export const getLiveTallies = async (roomId: string, token: string) => {
+export const getLiveTallies = async (roomId: string, token?: string) => {
   const response = await api.get(`/rooms/${roomId}/tallies`, {
     headers: authHeader(token),
   });

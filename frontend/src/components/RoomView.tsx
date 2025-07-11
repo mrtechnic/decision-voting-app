@@ -1,68 +1,42 @@
-import { useState, useEffect, useContext } from "react";
+import React, { useContext } from "react";
 import { XCircle, CheckCircle, Clock, Vote } from "lucide-react";
-import { AuthContext, type AuthContextType } from "../contexts/AuthContext";
-import type { Room } from "../types";
-import { getLiveTallies, getRoom, vote } from "../utils/api";
+import { AuthContext } from "../contexts/AuthContext";
+import { useRoom } from "../hooks/UseRoom";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
 
-const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({ roomId, onBack }) => {
-  const [room, setRoom] = useState<Room | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [voting, setVoting] = useState(false);
-  const [hasVoted, setHasVoted] = useState(false);
-  const [liveTallies, setLiveTallies] = useState<number[]>([]);
-  const [showLiveTallies, setShowLiveTallies] = useState(false);
-   const authContext = useContext<AuthContextType | undefined>(AuthContext);
+const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({
+  roomId,
+  onBack,
+}) => {
+  const authContext = useContext(AuthContext);
   const token = authContext?.token;
   const user = authContext?.user;
 
-  const loadRoom = async () => {
-    try {
-      const result = await getRoom(roomId);
-      setRoom(result.room);
-      
-      if (user && result.room.creatorEmail === user.email && !result.room.isExpired) {
-        try {
-          const talliesResult = await getLiveTallies(roomId, token!);
-          setLiveTallies(talliesResult.tallies);
-          setShowLiveTallies(true);
-        } catch (err) {
-          console.log('Not room creator or cannot access tallies');
-        }
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadRoom();
-  }, [roomId]);
-
-  const handleVote = async (optionIndex: number) => {
-    if (!room || voting) return;
-    
-    setVoting(true);
-    try {
-      await vote(roomId, optionIndex, token || undefined);
-      setHasVoted(true);
-      loadRoom();
-    } catch (err: any) {
-      if (err.message.includes('already voted')) {
-        setHasVoted(true);
-      }
-      setError(err.message);
-    } finally {
-      setVoting(false);
-    }
-  };
+  const {
+    room,
+    loading,
+    error,
+    voting,
+    hasVoted,
+    liveTallies,
+    showLiveTallies,
+    handleVote,
+  } = useRoom(roomId, token ?? undefined, user);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <div className="text-lg">Loading room...</div>
+        <div className="text-lg animate-pulse text-gray-500">
+          Loading room...
+        </div>
       </div>
     );
   }
@@ -83,20 +57,32 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({ roomId, on
 
   if (!room) return null;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
-  };
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleString();
 
   const displayTallies = room.tallies || liveTallies || [];
   const showResults = room.isExpired || showLiveTallies;
 
+  const chartData = room.options.map((option, index) => ({
+    name: option.text,
+    votes: displayTallies[index] || 0,
+  }));
+
+  console.log("Chart Data:", chartData);
+
+  const colors = [
+    "#2563eb",
+    "#10b981",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#ec4899",
+  ];
+
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={onBack}
-          className="text-blue-600 hover:underline"
-        >
+        <button onClick={onBack} className="text-blue-600 hover:underline">
           ← Back
         </button>
         <div className="flex items-center gap-2">
@@ -106,14 +92,12 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({ roomId, on
             <CheckCircle className="text-green-500" size={20} />
           )}
           <span className="text-sm text-gray-500">
-            {room.isExpired ? 'Voting Ended' : 'Active'}
+            {room.isExpired ? "Voting Ended" : "Active"}
           </span>
         </div>
       </div>
-
       <h1 className="text-2xl font-bold mb-4">{room.title}</h1>
       <p className="text-gray-600 mb-6">{room.description}</p>
-
       <div className="mb-6">
         <div className="flex items-center text-sm text-gray-500 mb-2">
           <Clock size={16} className="mr-2" />
@@ -124,16 +108,16 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({ roomId, on
           Total Votes: {room.totalVotes}
         </div>
       </div>
-
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">
-          {room.isExpired ? 'Final Results' : 'Vote for your preferred option'}
+          {room.isExpired ? "Final Results" : "Vote your preferred candidate"}
         </h3>
-        
+
         {room.options.map((option, index) => {
           const voteCount = displayTallies[index] || 0;
-          const percentage = room.totalVotes > 0 ? (voteCount / room.totalVotes) * 100 : 0;
-          
+          const percentage =
+            room.totalVotes > 0 ? (voteCount / room.totalVotes) * 100 : 0;
+
           return (
             <div key={index} className="border rounded-lg p-4">
               <div className="flex justify-between items-center mb-2">
@@ -144,30 +128,53 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({ roomId, on
                   </span>
                 )}
               </div>
-              
+
               {showResults && (
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-500"
                     style={{ width: `${percentage}%` }}
                   />
                 </div>
               )}
-              
+
               {!room.isExpired && !hasVoted && (
                 <button
                   onClick={() => handleVote(index)}
                   disabled={voting}
                   className="mt-3 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  aria-label={`Vote for ${option.text}`}
                 >
-                  {voting ? 'Voting...' : 'Vote for this option'}
+                  {voting ? "Voting..." : "Vote for this option"}
                 </button>
               )}
             </div>
           );
         })}
       </div>
-
+   
+      {chartData.length > 0 && (
+        <div className="mt-10">
+          <h3 className="text-lg font-semibold mb-2">Live Voting Chart</h3>
+          <div style={{ width: "100%", height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <XAxis dataKey="name" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="votes">
+                  {chartData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={colors[index % colors.length]}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
       {hasVoted && !room.isExpired && (
         <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
           <div className="flex items-center">
@@ -176,12 +183,6 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({ roomId, on
               Thank you for voting! Your vote has been recorded.
             </span>
           </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="text-red-600">{error}</div>
         </div>
       )}
     </div>
