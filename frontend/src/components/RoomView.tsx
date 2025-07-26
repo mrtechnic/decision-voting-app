@@ -163,7 +163,7 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({
                 <YAxis allowDecimals={false} />
                 <Tooltip />
                 <Bar dataKey="votes">
-                  {chartData.map((entry, index) => (
+                  {chartData.map((_, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={colors[index % colors.length]}
