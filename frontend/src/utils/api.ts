@@ -13,7 +13,6 @@ const api = axios.create({
 const authHeader = (token?: string) =>
   token ? { Authorization: `Bearer ${token}` } : {};
 
-
 export const signin = async (email: string, password: string) => {
   try {
       const response = await api.post('/auth/login', { email, password });
@@ -32,9 +31,6 @@ export const signup = async (email: string, password: string, name: string) => {
     throw error.response?.data || { message: 'Something went wrong' };
   }
 };
-
-
-
 
 export const createRoom = async (roomData: any, token: string) => {
   const response = await api.post('/rooms', roomData, {
@@ -72,6 +68,13 @@ export const getMyRooms = async (token?: string) => {
 
 export const getLiveTallies = async (roomId: string, token?: string) => {
   const response = await api.get(`/rooms/${roomId}/tallies`, {
+    headers: authHeader(token),
+  });
+  return response.data;
+};
+
+export const deleteRoom = async (roomId: string, token: string) => {
+  const response = await api.delete(`/rooms/${roomId}`, {
     headers: authHeader(token),
   });
   return response.data;

@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import DecisionRoom from '../models/DecisionRoom';
-import { generateRoomId, getVoterIdentifier } from '../utils/helpers';
+import { generateRoomId } from '../utils/helpers';
 import { AuthRequest } from '../middlewares/authMiddleware';
 
 export const createRoom = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -69,9 +69,10 @@ export const getRoomById = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
-    const voterIdentifier = getVoterIdentifier(req);
-    const hasVoted = room.voters.includes(voterIdentifier);
     const isExpired = room.deadline ? new Date() > room.deadline : false;
+    
+    console.log('Room options from database:', room.options);
+    console.log('Total votes calculated:', room.options.reduce((sum, option) => sum + option.votes, 0));
 
     res.json({
       room: {
@@ -83,8 +84,9 @@ export const getRoomById = async (req: AuthRequest, res: Response): Promise<void
         roomId: room.roomId,
         creator: room.creator,
         isExpired,
-        hasVoted,
+        hasVoted: false, // Will be implemented with your new voter identification method
         totalVotes: room.options.reduce((sum, option) => sum + option.votes, 0),
+        voters: room.voters,
         createdAt: room.createdAt
       }
     });
@@ -115,13 +117,13 @@ export const voteInRoom = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
-    const voterIdentifier = getVoterIdentifier(req);
-
-    
-    if (room.voters.includes(voterIdentifier)) {
-      res.status(400).json({ error: 'You have already voted in this room' });
-      return;
-    }
+    // TODO: Implement your new voter identification method here
+    // For now, allowing multiple votes (temporary)
+    // const voterIdentifier = yourNewVoterIdentificationMethod(req);
+    // if (room.voters.includes(voterIdentifier)) {
+    //   res.status(400).json({ error: 'You have already voted in this room' });
+    //   return;
+    // }
 
     const optionIndex = room.options.findIndex((option) => option.id === optionId);
     if (optionIndex === -1) {
@@ -129,14 +131,34 @@ export const voteInRoom = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
+    console.log('Before vote - Option votes:', room.options[optionIndex].votes);
     room.options[optionIndex].votes += 1;
-    room.voters.push(voterIdentifier);
+    console.log('After vote - Option votes:', room.options[optionIndex].votes);
+    // room.voters.push(voterIdentifier); // Will be implemented with your new method
 
     await room.save();
+    console.log('Room saved successfully');
+
+    // Emit real-time update to all clients in the room
+    const io = req.app.get('io');
+    if (io) {
+      const tallies = room.options.map((option) => option.votes || 0);
+      const totalVotes = room.options.reduce((sum, option) => sum + option.votes, 0);
+      
+      io.to(roomId).emit('vote-updated', {
+        roomId,
+        tallies,
+        totalVotes,
+        optionId,
+        voterCount: room.voters.length,
+        uniqueVoters: room.voters.length
+      });
+    }
 
     res.json({
       message: 'Vote cast successfully',
-      totalVotes: room.options.reduce((sum, option) => sum + option.votes, 0)
+      totalVotes: room.options.reduce((sum, option) => sum + option.votes, 0),
+      uniqueVoters: room.voters.length
     });
   } catch (error) {
     console.error('Vote error:', error);
@@ -228,6 +250,31 @@ export const getLiveTallies = async (req: AuthRequest, res: Response): Promise<v
     console.error("Error fetching tallies:", err);
     res.status(500).json({ message: "Server error" });
     return 
+  }
+};
+
+export const deleteRoom = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { roomId } = req.params;
+    
+    const room = await DecisionRoom.findOne({ roomId });
+    if (!room) {
+      res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+
+    // Only the creator can delete the room
+    if (room.creator.toString() !== req.user._id.toString()) {
+      res.status(403).json({ error: 'Only room creator can delete this room' });
+      return;
+    }
+
+    await DecisionRoom.findByIdAndDelete(room._id);
+
+    res.json({ message: 'Room deleted successfully' });
+  } catch (error) {
+    console.error('Delete room error:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 };
 

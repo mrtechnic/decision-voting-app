@@ -47,6 +47,10 @@ const Dashboard: React.FC = () => {
     loadRooms(); // Refresh rooms when returning
   };
 
+  const handleDeleteRoom = (roomId: string) => {
+    setRooms(rooms.filter(room => room.roomId !== roomId));
+  };
+
   if (currentView === 'room') {
     return <RoomView roomId={currentRoomId} onBack={handleBackToDashboard} />;
   }
@@ -86,7 +90,12 @@ const Dashboard: React.FC = () => {
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
           {rooms.map((room) => (
-            <RoomCard key={room.id} room={room} onView={handleViewRoom} />
+            <RoomCard 
+              key={room.id} 
+              room={room} 
+              onView={handleViewRoom}
+              onDelete={handleDeleteRoom}
+            />
           ))}
         </div>
       )}

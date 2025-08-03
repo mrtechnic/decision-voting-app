@@ -22,6 +22,7 @@ export interface Room {
   totalVotes: number;
   isExpired: boolean;
   creatorEmail?: string;
+  voters?: string[];
 }
 
 export interface AuthState {
