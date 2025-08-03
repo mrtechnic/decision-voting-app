@@ -7,6 +7,10 @@ import {
   getResults,
   getLiveTallies,
   deleteRoom,
+  requestOTP,
+  verifyOTP,
+  addAccreditedVoters,
+  getAccreditedVoters,
 } from '../controllers/roomController';
 import { authenticateToken } from '../middlewares/authMiddleware';
 
@@ -26,5 +30,11 @@ router.get('/:roomId/tallies', authenticateToken, getLiveTallies);
 
 // Only room creator can delete their room
 router.delete('/:roomId', authenticateToken, deleteRoom);
+
+// Accreditation system routes
+router.post('/:roomId/request-otp', requestOTP);
+router.post('/:roomId/verify-otp', verifyOTP);
+router.post('/:roomId/add-accredited-voters', authenticateToken, addAccreditedVoters);
+router.get('/:roomId/accredited-voters', authenticateToken, getAccreditedVoters);
 
 export default router;

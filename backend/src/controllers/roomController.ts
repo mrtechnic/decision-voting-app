@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import DecisionRoom from '../models/DecisionRoom';
-import { generateRoomId } from '../utils/helpers';
+import { generateRoomId, generateOTP, isOTPExpired, validatePhoneNumber } from '../utils/helpers';
 import { AuthRequest } from '../middlewares/authMiddleware';
 
 export const createRoom = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -99,7 +99,7 @@ export const getRoomById = async (req: AuthRequest, res: Response): Promise<void
 export const voteInRoom = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { roomId } = req.params;
-    const { optionId } = req.body;
+    const { optionId, phoneNumber } = req.body;
 
     if (!optionId) {
       res.status(400).json({ error: 'Option ID is required' });
@@ -117,13 +117,38 @@ export const voteInRoom = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
-    // TODO: Implement your new voter identification method here
-    // For now, allowing multiple votes (temporary)
-    // const voterIdentifier = yourNewVoterIdentificationMethod(req);
-    // if (room.voters.includes(voterIdentifier)) {
-    //   res.status(400).json({ error: 'You have already voted in this room' });
-    //   return;
-    // }
+    // Check if room requires accreditation
+    if (room.requireAccreditation) {
+      if (!phoneNumber) {
+        res.status(400).json({ error: 'Phone number is required for accredited voting' });
+        return;
+      }
+
+      const accreditedVoter = room.accreditedVoters.find(
+        voter => voter.phoneNumber === phoneNumber
+      );
+
+      if (!accreditedVoter) {
+        res.status(404).json({ error: 'Phone number not found in accredited voters list' });
+        return;
+      }
+
+      if (accreditedVoter.hasVoted) {
+        res.status(400).json({ error: 'You have already voted in this room' });
+        return;
+      }
+
+      if (!accreditedVoter.otpVerified) {
+        res.status(400).json({ error: 'OTP verification required before voting' });
+        return;
+      }
+
+      // Mark as voted
+      accreditedVoter.hasVoted = true;
+    } else {
+      // For non-accredited rooms, use the old system (temporary)
+      // TODO: Implement your new voter identification method here
+    }
 
     const optionIndex = room.options.findIndex((option) => option.id === optionId);
     if (optionIndex === -1) {
@@ -134,7 +159,6 @@ export const voteInRoom = async (req: AuthRequest, res: Response): Promise<void>
     console.log('Before vote - Option votes:', room.options[optionIndex].votes);
     room.options[optionIndex].votes += 1;
     console.log('After vote - Option votes:', room.options[optionIndex].votes);
-    // room.voters.push(voterIdentifier); // Will be implemented with your new method
 
     await room.save();
     console.log('Room saved successfully');
@@ -274,6 +298,226 @@ export const deleteRoom = async (req: AuthRequest, res: Response): Promise<void>
     res.json({ message: 'Room deleted successfully' });
   } catch (error) {
     console.error('Delete room error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// Accreditation system functions
+export const requestOTP = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { roomId } = req.params;
+    const { phoneNumber } = req.body;
+
+    if (!phoneNumber) {
+      res.status(400).json({ error: 'Phone number is required' });
+      return;
+    }
+
+    if (!validatePhoneNumber(phoneNumber)) {
+      res.status(400).json({ error: 'Invalid phone number format' });
+      return;
+    }
+
+    const room = await DecisionRoom.findOne({ roomId });
+    if (!room) {
+      res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+
+    if (!room.requireAccreditation) {
+      res.status(400).json({ error: 'This room does not require accreditation' });
+      return;
+    }
+
+    // Find accredited voter
+    const accreditedVoter = room.accreditedVoters.find(
+      voter => voter.phoneNumber === phoneNumber
+    );
+
+    if (!accreditedVoter) {
+      res.status(404).json({ error: 'Phone number not found in accredited voters list' });
+      return;
+    }
+
+    if (accreditedVoter.hasVoted) {
+      res.status(400).json({ error: 'You have already voted in this room' });
+      return;
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Update accredited voter with OTP
+    accreditedVoter.otpCode = otp;
+    accreditedVoter.otpExpiresAt = otpExpiresAt;
+    accreditedVoter.otpVerified = false;
+
+    await room.save();
+
+    // Log OTP to console (for development)
+    console.log(`OTP for ${phoneNumber}: ${otp}`);
+
+    res.json({ 
+      message: 'OTP sent successfully',
+      phoneNumber: phoneNumber,
+      expiresIn: '10 minutes'
+    });
+  } catch (error) {
+    console.error('Request OTP error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const verifyOTP = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { roomId } = req.params;
+    const { phoneNumber, otp } = req.body;
+
+    if (!phoneNumber || !otp) {
+      res.status(400).json({ error: 'Phone number and OTP are required' });
+      return;
+    }
+
+    const room = await DecisionRoom.findOne({ roomId });
+    if (!room) {
+      res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+
+    const accreditedVoter = room.accreditedVoters.find(
+      voter => voter.phoneNumber === phoneNumber
+    );
+
+    if (!accreditedVoter) {
+      res.status(404).json({ error: 'Phone number not found' });
+      return;
+    }
+
+    if (accreditedVoter.hasVoted) {
+      res.status(400).json({ error: 'You have already voted in this room' });
+      return;
+    }
+
+    if (!accreditedVoter.otpCode || accreditedVoter.otpCode !== otp) {
+      res.status(400).json({ error: 'Invalid OTP' });
+      return;
+    }
+
+    if (accreditedVoter.otpExpiresAt && isOTPExpired(accreditedVoter.otpExpiresAt)) {
+      res.status(400).json({ error: 'OTP has expired' });
+      return;
+    }
+
+    // Mark OTP as verified
+    accreditedVoter.otpVerified = true;
+    accreditedVoter.otpCode = undefined;
+    accreditedVoter.otpExpiresAt = undefined;
+
+    await room.save();
+
+    res.json({ 
+      message: 'OTP verified successfully',
+      voterName: accreditedVoter.name,
+      phoneNumber: phoneNumber
+    });
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const addAccreditedVoters = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { roomId } = req.params;
+    const { voters } = req.body;
+
+    if (!voters || !Array.isArray(voters)) {
+      res.status(400).json({ error: 'Voters array is required' });
+      return;
+    }
+
+    const room = await DecisionRoom.findOne({ roomId });
+    if (!room) {
+      res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+
+    // Only room creator can add accredited voters
+    if (room.creator.toString() !== req.user._id.toString()) {
+      res.status(403).json({ error: 'Only room creator can add accredited voters' });
+      return;
+    }
+
+    // Validate and add voters
+    const newVoters = [];
+    for (const voter of voters) {
+      if (!voter.phoneNumber || !voter.name) {
+        continue;
+      }
+
+      if (!validatePhoneNumber(voter.phoneNumber)) {
+        continue;
+      }
+
+      // Check if voter already exists
+      const existingVoter = room.accreditedVoters.find(
+        v => v.phoneNumber === voter.phoneNumber
+      );
+
+      if (!existingVoter) {
+        newVoters.push({
+          phoneNumber: voter.phoneNumber,
+          name: voter.name,
+          hasVoted: false,
+          otpVerified: false
+        });
+      }
+    }
+
+    room.accreditedVoters.push(...newVoters);
+    room.requireAccreditation = true;
+    room.maxVoters = room.accreditedVoters.length;
+
+    await room.save();
+
+    res.json({
+      message: 'Accredited voters added successfully',
+      addedCount: newVoters.length,
+      totalVoters: room.accreditedVoters.length
+    });
+  } catch (error) {
+    console.error('Add accredited voters error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const getAccreditedVoters = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { roomId } = req.params;
+
+    const room = await DecisionRoom.findOne({ roomId });
+    if (!room) {
+      res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+
+    // Only room creator can view accredited voters
+    if (room.creator.toString() !== req.user._id.toString()) {
+      res.status(403).json({ error: 'Only room creator can view accredited voters' });
+      return;
+    }
+
+    const voters = room.accreditedVoters.map(voter => ({
+      name: voter.name,
+      phoneNumber: voter.phoneNumber,
+      hasVoted: voter.hasVoted,
+      otpVerified: voter.otpVerified
+    }));
+
+    res.json({ voters });
+  } catch (error) {
+    console.error('Get accredited voters error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 };

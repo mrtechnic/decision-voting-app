@@ -13,3 +13,18 @@ export const getClientIp = (req: any) => {
 
   return ip;
 };
+
+// OTP generation and validation
+export const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+export const isOTPExpired = (expiresAt: Date) => {
+  return new Date() > expiresAt;
+};
+
+export const validatePhoneNumber = (phoneNumber: string) => {
+  // Basic phone number validation (can be enhanced)
+  const phoneRegex = /^\+?[\d\s\-\(\)]{10,}$/;
+  return phoneRegex.test(phoneNumber);
+};
