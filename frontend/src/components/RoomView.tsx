@@ -1,8 +1,10 @@
 import React, { useContext, useState } from "react";
-import { XCircle, CheckCircle, Clock, Vote, Wifi, WifiOff, BarChart3, X, Users, Calendar, TrendingUp } from "lucide-react";
+import { XCircle, CheckCircle, Clock, Vote, Wifi, WifiOff, BarChart3, X, Users, Calendar, TrendingUp, Shield } from "lucide-react";
 import { AuthContext } from "../contexts/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
 import { useRoom } from "../hooks/UseRoom";
+import OTPVerification from "./OTPVerification";
+import AccreditedVotersManager from "./AccreditedVotersManager";
 import {
   BarChart,
   Bar,
@@ -22,6 +24,20 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({
   const user = authContext?.user;
   const { isConnected } = useSocket();
   const [showChartModal, setShowChartModal] = useState(false);
+  const [showOTPVerification, setShowOTPVerification] = useState(false);
+  const [showVotersManager, setShowVotersManager] = useState(false);
+  const [verifiedPhoneNumber, setVerifiedPhoneNumber] = useState<string | null>(null);
+  const [verifiedVoterName, setVerifiedVoterName] = useState<string | null>(null);
+
+  const handleVerificationSuccess = (phoneNumber: string, voterName: string) => {
+    setVerifiedPhoneNumber(phoneNumber);
+    setVerifiedVoterName(voterName);
+    setShowOTPVerification(false);
+  };
+
+  const handleBackFromVerification = () => {
+    setShowOTPVerification(false);
+  };
 
   const {
     room,
@@ -176,6 +192,44 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({
               </div>
             )}
           </div>
+
+          {/* Accreditation Status */}
+          {room.requireAccreditation && (
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Shield className="text-yellow-600" size={20} />
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-yellow-800">Accredited Voting Required</h3>
+                  <p className="text-xs text-yellow-700 mt-1">
+                    This room requires phone number verification before voting
+                  </p>
+                </div>
+                {user && room.creatorEmail === user.email && (
+                  <button
+                    onClick={() => setShowVotersManager(true)}
+                    className="text-xs bg-yellow-600 text-white px-3 py-1 rounded-lg hover:bg-yellow-700 transition-colors"
+                  >
+                    Manage Voters
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Verified Voter Status */}
+          {verifiedPhoneNumber && (
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="text-green-600" size={20} />
+                <div>
+                  <h3 className="text-sm font-medium text-green-800">Verified Voter</h3>
+                  <p className="text-xs text-green-700">
+                    {verifiedVoterName} ({verifiedPhoneNumber})
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Voting Section */}
@@ -231,7 +285,13 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({
 
                   {!room.isExpired && !hasVoted && (
                     <button
-                      onClick={() => handleVote(index)}
+                      onClick={() => {
+                        if (room.requireAccreditation && !verifiedPhoneNumber) {
+                          setShowOTPVerification(true);
+                        } else {
+                          handleVote(index, verifiedPhoneNumber || undefined);
+                        }
+                      }}
                       disabled={voting}
                       className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                       aria-label={`Vote for ${option.text}`}
@@ -314,6 +374,24 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({
               </div>
             </div>
           </div>
+        )}
+
+        {/* OTP Verification Modal */}
+        {showOTPVerification && (
+          <OTPVerification
+            roomId={roomId}
+            onVerificationSuccess={handleVerificationSuccess}
+            onBack={handleBackFromVerification}
+          />
+        )}
+
+        {/* Accredited Voters Manager Modal */}
+        {showVotersManager && user && token && (
+          <AccreditedVotersManager
+            roomId={roomId}
+            token={token}
+            onClose={() => setShowVotersManager(false)}
+          />
         )}
       </div>
     </div>

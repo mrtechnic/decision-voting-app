@@ -11,6 +11,13 @@ export type Option = {
   _id?: string;
 };
 
+export interface AccreditedVoter {
+  phoneNumber: string;
+  name: string;
+  hasVoted: boolean;
+  otpVerified: boolean;
+}
+
 export interface Room {
   id: string;
   title: string;
@@ -23,6 +30,9 @@ export interface Room {
   isExpired: boolean;
   creatorEmail?: string;
   voters?: string[];
+  requireAccreditation?: boolean;
+  accreditedVoters?: AccreditedVoter[];
+  maxVoters?: number;
 }
 
 export interface AuthState {
@@ -36,4 +46,6 @@ export interface CreateRoomData {
   description: string;
   options: string[];
   deadline: string;
+  requireAccreditation?: boolean;
+  accreditedVoters?: { name: string; phoneNumber: string }[];
 }

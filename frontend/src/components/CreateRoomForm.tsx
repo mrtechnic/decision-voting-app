@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
 import { AuthContext, type AuthContextType } from "../contexts/AuthContext";
-import { Plus, XCircle } from "lucide-react";
+import { Plus, XCircle, Shield } from "lucide-react";
 import { createRoom } from "../utils/api";
 
 
@@ -11,6 +11,10 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
   const [deadline, setDeadline] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [requireAccreditation, setRequireAccreditation] = useState(false);
+  const [accreditedVoters, setAccreditedVoters] = useState<{ name: string; phoneNumber: string }[]>([
+    { name: '', phoneNumber: '' }
+  ]);
     const authContext = useContext<AuthContextType | undefined>(AuthContext);
     const token = authContext?.token;
   
@@ -45,11 +49,24 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
         throw new Error('At least 2 options are required');
       }
       
+      if (requireAccreditation) {
+        const validVoters = accreditedVoters.filter(voter => 
+          voter.name.trim() && voter.phoneNumber.trim()
+        );
+        if (validVoters.length === 0) {
+          throw new Error('At least one accredited voter is required when accreditation is enabled');
+        }
+      }
+      
       await createRoom({
         title: title.trim(),
         description: description.trim(),
         options: validOptions,
-        deadline
+        deadline,
+        requireAccreditation,
+        accreditedVoters: requireAccreditation ? accreditedVoters.filter(voter => 
+          voter.name.trim() && voter.phoneNumber.trim()
+        ) : []
       }, token!);
 
       onSuccess();
@@ -147,6 +164,85 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
               required
             />
           </div>
+          
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+              <Shield size={16} />
+              Accreditation Settings
+            </label>
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <input
+                type="checkbox"
+                id="requireAccreditation"
+                checked={requireAccreditation}
+                onChange={(e) => setRequireAccreditation(e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="requireAccreditation" className="text-sm text-gray-700">
+                Require phone number verification for voting
+              </label>
+            </div>
+            {requireAccreditation && (
+              <p className="text-xs text-gray-500 mt-1">
+                Voters will need to enter their phone number and verify with OTP before voting
+              </p>
+            )}
+          </div>
+          
+          {requireAccreditation && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Accredited Voters
+              </label>
+              <p className="text-xs text-gray-500 mb-3">
+                Add the phone numbers and names of voters who can participate
+              </p>
+              {accreditedVoters.map((voter, index) => (
+                <div key={index} className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="Voter name"
+                    value={voter.name}
+                    onChange={(e) => {
+                      const newVoters = [...accreditedVoters];
+                      newVoters[index].name = e.target.value;
+                      setAccreditedVoters(newVoters);
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Phone number"
+                    value={voter.phoneNumber}
+                    onChange={(e) => {
+                      const newVoters = [...accreditedVoters];
+                      newVoters[index].phoneNumber = e.target.value;
+                      setAccreditedVoters(newVoters);
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {accreditedVoters.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setAccreditedVoters(accreditedVoters.filter((_, i) => i !== index))}
+                      className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-md"
+                    >
+                      <XCircle size={16} />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setAccreditedVoters([...accreditedVoters, { name: '', phoneNumber: '' }])}
+                className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-md text-sm"
+              >
+                <Plus size={16} />
+                Add Voter
+              </button>
+            </div>
+          )}
+         
           
           {error && (
             <div className="text-red-600 text-sm bg-red-50 p-2 rounded">

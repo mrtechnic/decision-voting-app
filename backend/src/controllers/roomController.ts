@@ -5,7 +5,7 @@ import { AuthRequest } from '../middlewares/authMiddleware';
 
 export const createRoom = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { title, description, options, deadline } = req.body;
+    const { title, description, options, deadline, requireAccreditation, accreditedVoters } = req.body;
 
     if (!title || !description || !options || !deadline) {
       res.status(400).json({ error: 'All fields are required' });
@@ -29,6 +29,29 @@ export const createRoom = async (req: AuthRequest, res: Response): Promise<void>
       votes: 0
     }));
 
+    // Process accredited voters if provided
+    interface AccreditedVoterInput {
+      name: string;
+      phoneNumber: string;
+    }
+
+    interface ProcessedAccreditedVoter {
+      name: string;
+      phoneNumber: string;
+      hasVoted: boolean;
+      otpVerified: boolean;
+    }
+
+    const processedAccreditedVoters: ProcessedAccreditedVoter[] = requireAccreditation && accreditedVoters ?
+      (accreditedVoters as AccreditedVoterInput[])
+        .filter((voter: AccreditedVoterInput) => voter.name && voter.phoneNumber)
+        .map((voter: AccreditedVoterInput) => ({
+          name: voter.name.trim(),
+          phoneNumber: voter.phoneNumber.trim(),
+          hasVoted: false,
+          otpVerified: false
+        })) : [];
+
     const room = new DecisionRoom({
       title: title.trim(),
       description: description.trim(),
@@ -36,7 +59,10 @@ export const createRoom = async (req: AuthRequest, res: Response): Promise<void>
       creator: req.user._id,
       deadline: new Date(deadline),
       roomId,
-      voters: []
+      voters: [],
+      requireAccreditation: requireAccreditation || false,
+      accreditedVoters: processedAccreditedVoters,
+      maxVoters: processedAccreditedVoters.length
     });
 
     await room.save();
@@ -50,6 +76,7 @@ export const createRoom = async (req: AuthRequest, res: Response): Promise<void>
         options: room.options,
         deadline: room.deadline,
         roomId: room.roomId,
+        requireAccreditation: room.requireAccreditation,
         createdAt: room.createdAt
       }
     });
@@ -87,6 +114,9 @@ export const getRoomById = async (req: AuthRequest, res: Response): Promise<void
         hasVoted: false, // Will be implemented with your new voter identification method
         totalVotes: room.options.reduce((sum, option) => sum + option.votes, 0),
         voters: room.voters,
+        requireAccreditation: room.requireAccreditation,
+        accreditedVoters: room.accreditedVoters,
+        maxVoters: room.maxVoters,
         createdAt: room.createdAt
       }
     });

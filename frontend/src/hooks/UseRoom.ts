@@ -42,7 +42,7 @@ export const useRoom = (
     }
   };
 
-const handleVote = async (optionIndex: number) => {
+const handleVote = async (optionIndex: number, phoneNumber?: string) => {
   if (!room || voting || optionIndex >= room.options.length || optionIndex < 0)
     return;
 
@@ -54,7 +54,7 @@ const handleVote = async (optionIndex: number) => {
 
   setVoting(true);
   try {
-    await vote(roomId, selectedOption.id, token || undefined);
+    await vote(roomId, selectedOption.id, token || undefined, phoneNumber);
     setHasVoted(true);
 
     // No need to reload room info since we'll get real-time updates
