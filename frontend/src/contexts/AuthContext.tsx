@@ -35,8 +35,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [firstLaunch, setFirstLaunch] = useState(false);
 
 useEffect(() => {
-  const storedToken = localStorage.getItem('token');
-  const storedUser = localStorage.getItem('user');
   const hasLaunchedBefore = localStorage.getItem('hasLaunchedBefore');
 
   // Check if this is the first launch

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, X, User, Phone, CheckCircle, XCircle } from 'lucide-react';
+import { Users, Plus, X, User, CheckCircle, XCircle } from 'lucide-react';
 import { addAccreditedVoters, getAccreditedVoters } from '../utils/api';
 import toast from 'react-hot-toast';
 

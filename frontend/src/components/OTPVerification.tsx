@@ -20,7 +20,7 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
-  const [otpRequested, setOtpRequested] = useState(false);
+  const [_, setOtpRequested] = useState(false);
 
   const handleRequestOTP = async () => {
     if (!phoneNumber.trim()) {

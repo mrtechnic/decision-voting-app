@@ -1,5 +1,5 @@
-import React, { useContext, useState, useEffect } from "react";
-import { XCircle, CheckCircle, Clock, Vote, Wifi, WifiOff, BarChart3, X, Users, Calendar, TrendingUp, Shield } from "lucide-react";
+import React, { useContext, useState } from "react";
+import { XCircle, CheckCircle, Vote, Wifi, WifiOff, BarChart3, X, Users, Calendar, TrendingUp, Shield } from "lucide-react";
 import { AuthContext } from "../contexts/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
 import { useRoom } from "../hooks/UseRoom";
@@ -45,7 +45,6 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({
     error,
     voting,
     hasVoted,
-    liveTallies,
     showLiveTallies,
     handleVote,
   } = useRoom(roomId, token ?? undefined, user);
@@ -99,7 +98,7 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({
     });
   };
 
-  const displayTallies = room.tallies || liveTallies || [];
+  
   const showResults = room.isExpired || showLiveTallies;
 
   // Use the actual vote counts from room.options for the chart
