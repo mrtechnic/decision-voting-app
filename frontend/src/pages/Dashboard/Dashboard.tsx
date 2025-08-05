@@ -64,7 +64,7 @@ const Dashboard: React.FC = () => {
         </div>
         <button
           onClick={() => setShowCreateForm(true)}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-md hover:from-blue-700 hover:to-purple-700 transition-all"
         >
           <Plus size={20} />
           Create Room
@@ -82,7 +82,7 @@ const Dashboard: React.FC = () => {
           <p className="text-gray-600 mb-4">Create your first Situation room to get started!</p>
           <button
             onClick={() => setShowCreateForm(true)}
-            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-md hover:from-blue-700 hover:to-purple-700 transition-all"
           >
             Create Your First Room
           </button>

@@ -11,9 +11,9 @@ export default {
         foreground: '#111827', // Dark text 
         border: '#e5e7eb',
         primary: {
-          500: '#3b82f6', // Blue-500
-          600: '#2563eb',
-          700: '#1d4ed8',
+          500: '#8b5cf6', // Purple-500
+          600: '#7c3aed', // Purple-600
+          700: '#6d28d9', // Purple-700
         },
       },
     },

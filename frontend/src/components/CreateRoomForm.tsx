@@ -96,7 +96,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
               required
             />
           </div>
@@ -108,7 +108,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
               rows={3}
               required
             />
@@ -125,7 +125,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
                   value={option}
                   onChange={(e) => updateOption(index, e.target.value)}
                   placeholder='Enter Candidate'
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                   required
                 />
                 {options.length > 2 && (
@@ -143,7 +143,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
               <button
                 type="button"
                 onClick={addOption}
-                className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-md"
+                className="flex items-center gap-2 text-purple-600 hover:bg-purple-50 px-3 py-2 rounded-md"
               >
                 <Plus size={16} />
                 Add Candidate
@@ -160,7 +160,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
               min={minDateString}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
               required
             />
           </div>
@@ -176,7 +176,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
                 id="requireAccreditation"
                 checked={requireAccreditation}
                 onChange={(e) => setRequireAccreditation(e.target.checked)}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
               />
               <label htmlFor="requireAccreditation" className="text-sm text-gray-700">
                 Require phone number verification for voting
@@ -208,7 +208,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
                       newVoters[index].name = e.target.value;
                       setAccreditedVoters(newVoters);
                     }}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                   <input
                     type="tel"
@@ -219,7 +219,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
                       newVoters[index].phoneNumber = e.target.value;
                       setAccreditedVoters(newVoters);
                     }}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                   {accreditedVoters.length > 1 && (
                     <button
@@ -235,7 +235,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
               <button
                 type="button"
                 onClick={() => setAccreditedVoters([...accreditedVoters, { name: '', phoneNumber: '' }])}
-                className="flex items-center gap-2 text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-md text-sm"
+                className="flex items-center gap-2 text-purple-600 hover:bg-purple-50 px-3 py-2 rounded-md text-sm"
               >
                 <Plus size={16} />
                 Add Voter
@@ -254,7 +254,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-md hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all"
             >
               {loading ? 'Creating...' : 'Create Room'}
             </button>

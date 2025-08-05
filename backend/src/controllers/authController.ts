@@ -25,7 +25,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 const user = new User({
   name,
   email,
-  password, 
+  password: hashedPassword, 
 });
 
 

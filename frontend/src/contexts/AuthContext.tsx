@@ -10,9 +10,9 @@ export interface AuthContextType extends AuthState {
   logout: () => void;
   loading: boolean;
   isAuthenticated: boolean;
+  firstLaunch: boolean;
+  resetFirstLaunch: () => void;
 }
-
-
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -32,20 +32,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [firstLaunch, setFirstLaunch] = useState(false);
 
 useEffect(() => {
   const storedToken = localStorage.getItem('token');
   const storedUser = localStorage.getItem('user');
+  const hasLaunchedBefore = localStorage.getItem('hasLaunchedBefore');
 
-  if (storedToken && storedUser && storedUser !== 'undefined') {
-    try {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    } catch (err) {
-      console.error("Failed to parse stored user:", err);
-      localStorage.removeItem('user'); // cleanup invalid data
-    }
+  // Check if this is the first launch
+  if (!hasLaunchedBefore || hasLaunchedBefore === 'null' || hasLaunchedBefore === 'undefined') {
+    // Clear any existing authentication data on first launch
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setFirstLaunch(true);
+    setUser(null);
+    setToken(null);
+    localStorage.setItem('hasLaunchedBefore', 'true');
+    setLoading(false);
+    return;
   }
+
+  // Always clear authentication data on app start (except first launch)
+  // This ensures users always see login page when they visit the app
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  setUser(null);
+  setToken(null);
 
   setLoading(false);
 }, []);
@@ -85,6 +97,11 @@ useEffect(() => {
     localStorage.removeItem('user');
   };
 
+  const resetFirstLaunch = () => {
+    localStorage.removeItem('hasLaunchedBefore');
+    setFirstLaunch(true);
+  };
+
   const value: AuthContextType = {
     user,
     token,
@@ -93,6 +110,8 @@ useEffect(() => {
     register,
     logout,
     loading,
+    firstLaunch,
+    resetFirstLaunch,
   };
 
   return (

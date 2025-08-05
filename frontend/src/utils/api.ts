@@ -113,6 +113,28 @@ export const getAccreditedVoters = async (roomId: string, token: string) => {
   return response.data;
 };
 
+// Password reset API functions
+export const requestPasswordReset = async (email: string) => {
+  try {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: 'Failed to send password reset email' };
+  }
+};
+
+export const resetPassword = async (token: string, newPassword: string) => {
+  try {
+    const response = await api.post('/auth/reset-password', { 
+      token, 
+      newPassword 
+    });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: 'Failed to reset password' };
+  }
+};
+
 export default api
 
 

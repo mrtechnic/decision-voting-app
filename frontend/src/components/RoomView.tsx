@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { XCircle, CheckCircle, Clock, Vote, Wifi, WifiOff, BarChart3, X, Users, Calendar, TrendingUp, Shield } from "lucide-react";
 import { AuthContext } from "../contexts/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
@@ -49,6 +49,9 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({
     showLiveTallies,
     handleVote,
   } = useRoom(roomId, token ?? undefined, user);
+
+  // Note: OTP verification is now triggered by the blocking overlay button
+  // instead of automatically showing the modal
 
   if (loading) {
     return (
@@ -110,17 +113,40 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({
   console.log("Room total votes:", room.totalVotes);
 
   const colors = [
-    "#2563eb",
-    "#10b981",
-    "#f59e0b",
-    "#ef4444",
-    "#8b5cf6",
-    "#ec4899",
+    "#7c3aed", // Purple-600
+    "#8b5cf6", // Purple-500
+    "#6d28d9", // Purple-700
+    "#a855f7", // Purple-400
+    "#9333ea", // Purple-600
+    "#7c2d12", // Purple-800
   ];
+
+  // Show blocking overlay if verification is required but not completed
+  const showBlockingOverlay = room?.requireAccreditation && !user && !verifiedPhoneNumber;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto p-6">
+        {/* Blocking overlay for non-authenticated users who need verification */}
+        {showBlockingOverlay && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 p-4">
+            <div className="bg-white rounded-xl p-6 max-w-md w-full text-center">
+              <div className="mb-4">
+                <Shield className="text-blue-600 mx-auto" size={48} />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Verification Required</h3>
+              <p className="text-gray-600 mb-4">
+                This voting room requires phone number verification before you can vote.
+              </p>
+                             <button
+                 onClick={() => setShowOTPVerification(true)}
+                 className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium"
+               >
+                 Start Verification
+               </button>
+            </div>
+          </div>
+        )}
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -238,15 +264,23 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({
             <h2 className="text-xl font-semibold text-gray-900">
               {room.isExpired ? "Final Results" : "Cast Your Vote"}
             </h2>
-            {chartData.length > 0 && (
-              <button
-                onClick={() => setShowChartModal(true)}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                <BarChart3 size={16} />
-                View Chart
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {room.requireAccreditation && !verifiedPhoneNumber && !user && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full text-sm font-medium">
+                  <Shield size={14} />
+                  Verification Required
+                </div>
+              )}
+              {chartData.length > 0 && (
+                                 <button
+                   onClick={() => setShowChartModal(true)}
+                   className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all text-sm font-medium"
+                 >
+                   <BarChart3 size={16} />
+                   View Chart
+                 </button>
+              )}
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -276,28 +310,22 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({
 
                   {showResults && (
                     <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${percentage}%` }}
-                      />
+                                             <div
+                         className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full transition-all duration-500"
+                         style={{ width: `${percentage}%` }}
+                       />
                     </div>
                   )}
 
                   {!room.isExpired && !hasVoted && (
-                    <button
-                      onClick={() => {
-                        if (room.requireAccreditation && !verifiedPhoneNumber) {
-                          setShowOTPVerification(true);
-                        } else {
-                          handleVote(index, verifiedPhoneNumber || undefined);
-                        }
-                      }}
-                      disabled={voting}
-                      className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-                      aria-label={`Vote for ${option.text}`}
-                    >
-                      {voting ? "Voting..." : "Vote"}
-                    </button>
+                                         <button
+                       onClick={() => handleVote(index, verifiedPhoneNumber || undefined)}
+                       disabled={voting || (room.requireAccreditation && !verifiedPhoneNumber)}
+                       className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2.5 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
+                       aria-label={`Vote for ${option.text}`}
+                     >
+                       {voting ? "Voting..." : room.requireAccreditation && !verifiedPhoneNumber ? "Verification Required" : "Vote"}
+                     </button>
                   )}
                 </div>
               );
@@ -322,10 +350,10 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-3 max-w-lg w-full mx-4">
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="text-blue-600" size={16} />
-                  <h3 className="text-base font-semibold text-gray-900">Voting Results</h3>
-                </div>
+                                 <div className="flex items-center gap-2">
+                   <BarChart3 className="text-purple-600" size={16} />
+                   <h3 className="text-base font-semibold text-gray-900">Voting Results</h3>
+                 </div>
                 <button
                   onClick={() => setShowChartModal(false)}
                   className="text-gray-400 hover:text-gray-600"
@@ -382,6 +410,7 @@ const RoomView: React.FC<{ roomId: string; onBack: () => void }> = ({
             roomId={roomId}
             onVerificationSuccess={handleVerificationSuccess}
             onBack={handleBackFromVerification}
+            isModal={true}
           />
         )}
 

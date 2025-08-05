@@ -39,6 +39,8 @@ export interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  firstLaunch?: boolean;
+  resetFirstLaunch?: () => void;
 }
 
 export interface CreateRoomData {

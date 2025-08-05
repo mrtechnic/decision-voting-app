@@ -1,4 +1,4 @@
-import { XCircle, CheckCircle, Clock, Vote, Eye, Share2, Trash2, AlertTriangle, Users } from "lucide-react";
+import { XCircle, CheckCircle, Clock, Vote, Eye, Share2, Trash2, AlertTriangle, Users, Trophy, TrendingUp } from "lucide-react";
 import { useContext, useState } from "react";
 import { AuthContext } from "../contexts/AuthContext";
 import { deleteRoom } from "../utils/api";
@@ -22,6 +22,23 @@ const RoomCard: React.FC<{
       minute: '2-digit'
     });
   };
+
+  // Calculate leaderboard data
+  const getLeaderboard = () => {
+    if (!room.options || room.options.length === 0) return [];
+    
+    const optionsWithVotes = room.options.map(option => ({
+      text: option.text,
+      votes: option.votes || 0,
+      percentage: room.totalVotes > 0 ? ((option.votes || 0) / room.totalVotes * 100).toFixed(1) : '0'
+    }));
+    
+    return optionsWithVotes
+      .sort((a, b) => b.votes - a.votes)
+      .slice(0, 3);
+  };
+
+  const leaderboard = getLeaderboard();
 
   const copyInviteUrl = () => {
     const url = `${window.location.origin}/room/${room.roomId}`;
@@ -81,19 +98,65 @@ const RoomCard: React.FC<{
           </div>
 
           {/* Stats row */}
-          <div className="flex items-center gap-4 text-sm text-gray-500">
-            <div className="flex items-center gap-1.5">
-              <Clock size={14} />
-              <span>{formatDate(room.deadline)}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Vote size={14} />
-              <span>{room.totalVotes} votes</span>
-            </div>
-            {room.voters && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-4 text-sm text-gray-500">
               <div className="flex items-center gap-1.5">
-                <Users size={14} />
-                <span>{room.voters.length} voters</span>
+                <Clock size={14} />
+                <span>{formatDate(room.deadline)}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Vote size={14} />
+                <span>{room.totalVotes} Total Votes</span>
+              </div>
+              {room.voters && (
+                <div className="flex items-center gap-1.5">
+                  <Users size={14} />
+                  <span>{room.voters.length} voters</span>
+                </div>
+              )}
+            </div>
+
+            {/* Leaderboard */}
+            {leaderboard.length > 0 && (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Trophy size={14} className="text-yellow-600" />
+                  <span className="text-sm font-medium text-gray-700">Election Result</span>
+                </div>
+                <div className="space-y-2">
+                  {leaderboard.map((option, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                          index === 0 ? 'bg-yellow-500 text-white' :
+                          index === 1 ? 'bg-gray-400 text-white' :
+                          'bg-orange-500 text-white'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <span className="text-sm text-gray-700 truncate max-w-[120px]">
+                          {option.text}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <TrendingUp size={12} className="text-green-600" />
+                          <span className="text-xs font-medium text-gray-600">
+                            {option.votes} votes
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          ({option.percentage}%)
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {room.options.length > 3 && (
+                  <div className="text-xs text-gray-500 mt-2 text-center">
+                    +{room.options.length - 3} more candidates
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -104,7 +167,7 @@ const RoomCard: React.FC<{
           <div className="flex gap-2">
             <button
               onClick={() => onView(room.roomId)}
-              className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all text-sm font-medium"
             >
               <Eye size={14} />
               View
