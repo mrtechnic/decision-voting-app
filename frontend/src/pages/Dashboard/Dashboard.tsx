@@ -1,5 +1,4 @@
-import { useState, useContext, useEffect } from "react";
-import { AuthContext, type AuthContextType } from "../../contexts/AuthContext";
+import { useState, useEffect } from "react";
 import { Plus, Users } from "lucide-react";
 import RoomView from '../../components/RoomView'
 import RoomCard from "../../components/RoomCard";
@@ -15,16 +14,15 @@ const Dashboard: React.FC = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'room'>('dashboard');
   const [currentRoomId, setCurrentRoomId] = useState<string>('');
-  const authContext = useContext<AuthContextType | undefined>(AuthContext);
-  const token = authContext?.token;
-  const user = authContext?.user;
+  const user = {} as any;
+
 
   const loadRooms = async () => {
-    if (!token) return;
+   
     
     setLoading(true);
     try {
-      const result = await getMyRooms(token);
+      const result = await getMyRooms();
       setRooms(result.rooms);
     } catch (err) {
       console.error('Failed to load rooms:', err);
@@ -35,7 +33,7 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     loadRooms();
-  }, [token]);
+  }, []);
 
   const handleViewRoom = (roomId: string) => {
     setCurrentRoomId(roomId);

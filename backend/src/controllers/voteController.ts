@@ -1,10 +1,10 @@
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import crypto from 'crypto';
 import { Room } from '../models/Room';
 import { Vote } from '../models/Vote';
-import { AuthRequest } from '../middlewares/authMiddleware';
 
-const createVoterFingerprint = (req: AuthRequest): string => {
+
+const createVoterFingerprint = (req: Request): string => {
   const ip = req.ip || req.connection.remoteAddress || 'unknown';
   const userAgent = req.get('User-Agent') || 'unknown';
   const userId = req.user?._id?.toString() || '';
@@ -14,7 +14,7 @@ const createVoterFingerprint = (req: AuthRequest): string => {
     .digest('hex');
 };
 
-export const castVote = async (req: AuthRequest, res: Response): Promise<void> => {
+export const castVote = async (req: Request, res: Response): Promise<void> => {
   try {
     const { inviteCode } = req.params;
     const { option } = req.body;

@@ -2,22 +2,20 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import dotenv from 'dotenv';
+import { authCookieName } from '../utils/constants';
 
 dotenv.config();
 
-export interface AuthRequest extends Request {
-  user?: any;
-}
+
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
 export const authenticateToken = async (
-  req: AuthRequest, 
+  req: Request, 
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = req.cookies[authCookieName]
 
   if (!token) {
     res.status(401).json({ error: 'Token required' });

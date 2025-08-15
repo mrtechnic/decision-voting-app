@@ -1,26 +1,51 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { useAuth } from '../../contexts/AuthContext';
+import { signin } from '../../utils/api';
 import { toast } from 'react-hot-toast';
 import { Mail, Lock } from 'lucide-react';
+import Cookies from 'js-cookie';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
+    console.log('Starting login process...');
+
     try {      
-      await login(email, password);
-      toast.success('Login successful!');
-      navigate('/dashboard');
+      console.log('Calling signin API...');
+      const response = await signin(email, password);
+      
+      console.log('Login response:', response);
+      console.log('Response type:', typeof response);
+      console.log('Response keys:', Object.keys(response || {}));
+      
+      // Check if login was successful
+      if (response && response.message === 'Log In successful') {
+        console.log('Login successful, checking for token...');
+        
+        // The backend might have set the token as an HTTP-only cookie
+        // Let's set a client-side cookie to indicate authentication
+        Cookies.set('authCookieName', 'authenticated', { expires: 7 }); // expires in 7 days
+        console.log('Authentication cookie set successfully');
+        
+        toast.success('Login successful!');
+        console.log('Navigating to dashboard...');
+        navigate('/dashboard');
+      } else {
+        console.error('Login failed:', response);
+        toast.error('Login failed: Invalid response');
+      }
     } catch (error: any) {
-      toast.error(error.message);
+      console.error('Login error:', error);
+      console.error('Error message:', error.message);
+      console.error('Error response:', error.response);
+      toast.error(error.message || 'Login failed');
     } finally {
       setLoading(false);
     }

@@ -34,36 +34,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [firstLaunch, setFirstLaunch] = useState(false);
 
-useEffect(() => {
-  const hasLaunchedBefore = localStorage.getItem('hasLaunchedBefore');
+  useEffect(() => {
+    const hasLaunchedBefore = localStorage.getItem('hasLaunchedBefore');
 
-  // Check if this is the first launch
-  if (!hasLaunchedBefore || hasLaunchedBefore === 'null' || hasLaunchedBefore === 'undefined') {
-    // Clear any existing authentication data on first launch
+    // Check if this is the first launch
+    if (!hasLaunchedBefore || hasLaunchedBefore === 'null' || hasLaunchedBefore === 'undefined') {
+      // Clear any existing authentication data on first launch
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setFirstLaunch(true);
+      setUser(null);
+      setToken(null);
+      localStorage.setItem('hasLaunchedBefore', 'true');
+      setLoading(false);
+      return;
+    }
+
+    // Always clear authentication data on app start (except first launch)
+    // This ensures users always see login page when they visit the app
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    setFirstLaunch(true);
     setUser(null);
     setToken(null);
-    localStorage.setItem('hasLaunchedBefore', 'true');
+
     setLoading(false);
-    return;
-  }
-
-  // Always clear authentication data on app start (except first launch)
-  // This ensures users always see login page when they visit the app
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  setUser(null);
-  setToken(null);
-
-  setLoading(false);
-}, []);
-
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await signin(email, password)
+      const response = await signin(email, password);
       const { token: newToken, user: newUser } = response;
 
       setToken(newToken);

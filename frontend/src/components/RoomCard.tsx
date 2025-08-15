@@ -1,6 +1,5 @@
 import { XCircle, CheckCircle, Clock, Vote, Eye, Share2, Trash2, AlertTriangle, Users, Trophy, TrendingUp } from "lucide-react";
-import { useContext, useState } from "react";
-import { AuthContext } from "../contexts/AuthContext";
+import { useState } from "react";
 import { deleteRoom } from "../utils/api";
 import toast from "react-hot-toast";
 import type { Room } from "../types";
@@ -10,8 +9,7 @@ const RoomCard: React.FC<{
   onView: (roomId: string) => void;
   onDelete?: (roomId: string) => void;
 }> = ({ room, onView, onDelete }) => {
-  const authContext = useContext(AuthContext);
-  const token = authContext?.token;
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const formatDate = (dateString: string) => {
@@ -51,10 +49,10 @@ const RoomCard: React.FC<{
   };
 
   const handleDeleteConfirm = async () => {
-    if (!token) return;
+  
 
     try {
-      await deleteRoom(room.roomId, token);
+      await deleteRoom(room.roomId);
       toast.success('Room deleted successfully!');
       onDelete?.(room.roomId);
       setShowDeleteConfirm(false);

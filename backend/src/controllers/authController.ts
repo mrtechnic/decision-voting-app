@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import User from '../models/User';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { authCookieName } from '../utils/constants';
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
@@ -61,9 +62,42 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1d' });
 
-    res.json({ token, user: { id: user?._id, name: user?.name, email: user?.email } });
+res.cookie(authCookieName, token, {
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
+  httpOnly: true, // prevents JavaScript access (more secure)
+  secure: process.env.NODE_ENV === "production", // cookie only sent over HTTPS in production
+  sameSite: "strict", // prevents CSRF attacks
+  path: "/", // cookie is valid for the whole site
+});
+
+
+    res.status(200).json({ message: 'Log In successful' });
+    return
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+export const fetchLoggedInUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = req.user
+    delete user.password
+    res.status(200).json({ user });
+    return
+  } catch (error) {
+    console.error('')
+    res.status(500).json({ error: 'Server error' });
+  }
+}
+
+export const logOutUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    res.clearCookie(authCookieName);
+    res.status(200).json({ message: 'Logout successful' });
+    return
+  } catch (error) {
+    console.error('')
+    res.status(500).json({ error: 'Server error' });
+  }
+}

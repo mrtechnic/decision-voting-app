@@ -1,9 +1,9 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import DecisionRoom from '../models/DecisionRoom';
 import { generateRoomId, generateOTP, isOTPExpired, validatePhoneNumber } from '../utils/helpers';
-import { AuthRequest } from '../middlewares/authMiddleware';
 
-export const createRoom = async (req: AuthRequest, res: Response): Promise<void> => {
+
+export const createRoom = async (req: Request, res: Response): Promise<void> => {
   try {
     const { title, description, options, deadline, requireAccreditation, accreditedVoters } = req.body;
 
@@ -86,7 +86,7 @@ export const createRoom = async (req: AuthRequest, res: Response): Promise<void>
   }
 };
 
-export const getRoomById = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getRoomById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { roomId } = req.params;
     const room = await DecisionRoom.findOne({ roomId }).populate('creator', 'name');
@@ -126,7 +126,7 @@ export const getRoomById = async (req: AuthRequest, res: Response): Promise<void
   }
 };
 
-export const voteInRoom = async (req: AuthRequest, res: Response): Promise<void> => {
+export const voteInRoom = async (req: Request, res: Response): Promise<void> => {
   try {
     const { roomId } = req.params;
     const { optionId, phoneNumber } = req.body;
@@ -220,7 +220,7 @@ export const voteInRoom = async (req: AuthRequest, res: Response): Promise<void>
   }
 };
 
-export const getUserRooms = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getUserRooms = async (req: Request, res: Response): Promise<void> => {
   try {
     const rooms = await DecisionRoom.find({ creator: req.user._id }).sort({ createdAt: -1 });
 
@@ -243,20 +243,16 @@ export const getUserRooms = async (req: AuthRequest, res: Response): Promise<voi
   }
 };
 
-export const getResults = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getResults = async (req: Request, res: Response): Promise<void> => {
   try {
     const { roomId } = req.params;
-    const room = await DecisionRoom.findOne({ roomId });
+    const room = await DecisionRoom.findOne({ roomId , creator: req.user._id});
 
     if (!room) {
       res.status(404).json({ error: 'Room not found' });
       return;
     }
 
-    if (room.creator.toString() !== req.user._id.toString()) {
-      res.status(403).json({ error: 'Only room creator can view results' });
-      return;
-    }
 
     const totalVotes = room.options.reduce((sum, option) => sum + option.votes, 0);
     const resultsWithPercentages = room.options.map(option => ({
@@ -278,7 +274,7 @@ export const getResults = async (req: AuthRequest, res: Response): Promise<void>
   }
 };
 
-export const getLiveTallies = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getLiveTallies = async (req: Request, res: Response): Promise<void> => {
   const { roomId } = req.params;
 
   try {
@@ -307,23 +303,17 @@ export const getLiveTallies = async (req: AuthRequest, res: Response): Promise<v
   }
 };
 
-export const deleteRoom = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteRoom = async (req: Request, res: Response): Promise<void> => {
   try {
     const { roomId } = req.params;
     
-    const room = await DecisionRoom.findOne({ roomId });
+    const room = await DecisionRoom.findOne({ roomId, creator: req.user._id });
     if (!room) {
       res.status(404).json({ error: 'Room not found' });
       return;
     }
 
-    // Only the creator can delete the room
-    if (room.creator.toString() !== req.user._id.toString()) {
-      res.status(403).json({ error: 'Only room creator can delete this room' });
-      return;
-    }
-
-    await DecisionRoom.findByIdAndDelete(room._id);
+    await room.deleteOne();
 
     res.json({ message: 'Room deleted successfully' });
   } catch (error) {
@@ -333,7 +323,7 @@ export const deleteRoom = async (req: AuthRequest, res: Response): Promise<void>
 };
 
 // Accreditation system functions
-export const requestOTP = async (req: AuthRequest, res: Response): Promise<void> => {
+export const requestOTP = async (req: Request, res: Response): Promise<void> => {
   try {
     const { roomId } = req.params;
     const { phoneNumber } = req.body;
@@ -399,7 +389,7 @@ export const requestOTP = async (req: AuthRequest, res: Response): Promise<void>
   }
 };
 
-export const verifyOTP = async (req: AuthRequest, res: Response): Promise<void> => {
+export const verifyOTP = async (req: Request, res: Response): Promise<void> => {
   try {
     const { roomId } = req.params;
     const { phoneNumber, otp } = req.body;
@@ -457,7 +447,7 @@ export const verifyOTP = async (req: AuthRequest, res: Response): Promise<void> 
   }
 };
 
-export const addAccreditedVoters = async (req: AuthRequest, res: Response): Promise<void> => {
+export const addAccreditedVoters = async (req: Request, res: Response): Promise<void> => {
   try {
     const { roomId } = req.params;
     const { voters } = req.body;
@@ -467,17 +457,12 @@ export const addAccreditedVoters = async (req: AuthRequest, res: Response): Prom
       return;
     }
 
-    const room = await DecisionRoom.findOne({ roomId });
+    const room = await DecisionRoom.findOne({ roomId, creator: req.user._id });
     if (!room) {
       res.status(404).json({ error: 'Room not found' });
       return;
     }
 
-    // Only room creator can add accredited voters
-    if (room.creator.toString() !== req.user._id.toString()) {
-      res.status(403).json({ error: 'Only room creator can add accredited voters' });
-      return;
-    }
 
     // Validate and add voters
     const newVoters = [];
@@ -522,21 +507,17 @@ export const addAccreditedVoters = async (req: AuthRequest, res: Response): Prom
   }
 };
 
-export const getAccreditedVoters = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getAccreditedVoters = async (req: Request, res: Response): Promise<void> => {
   try {
     const { roomId } = req.params;
 
-    const room = await DecisionRoom.findOne({ roomId });
+    const room = await DecisionRoom.findOne({ roomId, creator: req.user._id });
     if (!room) {
       res.status(404).json({ error: 'Room not found' });
       return;
     }
 
-    // Only room creator can view accredited voters
-    if (room.creator.toString() !== req.user._id.toString()) {
-      res.status(403).json({ error: 'Only room creator can view accredited voters' });
-      return;
-    }
+
 
     const voters = room.accreditedVoters.map(voter => ({
       name: voter.name,

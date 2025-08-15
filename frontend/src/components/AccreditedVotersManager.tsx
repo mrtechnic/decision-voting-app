@@ -18,7 +18,6 @@ interface AccreditedVotersManagerProps {
 
 const AccreditedVotersManager: React.FC<AccreditedVotersManagerProps> = ({
   roomId,
-  token,
   onClose
 }) => {
   const [voters, setVoters] = useState<AccreditedVoter[]>([]);
@@ -33,7 +32,7 @@ const AccreditedVotersManager: React.FC<AccreditedVotersManagerProps> = ({
 
   const loadVoters = async () => {
     try {
-      const result = await getAccreditedVoters(roomId, token);
+      const result = await getAccreditedVoters(roomId);
       setVoters(result.voters);
     } catch (error: any) {
       toast.error('Failed to load accredited voters');
@@ -68,7 +67,7 @@ const AccreditedVotersManager: React.FC<AccreditedVotersManagerProps> = ({
 
     setLoading(true);
     try {
-      await addAccreditedVoters(roomId, validVoters, token);
+      await addAccreditedVoters(roomId, validVoters);
       toast.success('Accredited voters added successfully!');
       setNewVoters([{ name: '', phoneNumber: '' }]);
       loadVoters();

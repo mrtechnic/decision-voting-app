@@ -4,89 +4,124 @@ import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 import Dashboard from "./pages/Dashboard/Dashboard";
-import { useContext } from "react";
-import { AuthContext } from "./contexts/AuthContext";
-
+import Cookies from "js-cookie";
 import { Link } from "react-router";
 import RoomView from "./components/RoomView";
 
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  redirectIfAuth?: boolean; 
+}
 
-function App() {
-  const context = useContext(AuthContext);
-  const logout = context?.logout;
-  const isAuthenticated = context?.isAuthenticated ?? false;
-  const firstLaunch = context?.firstLaunch ?? false;
-  const loading = context?.loading ?? true;
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, redirectIfAuth = false }) => {
 
-  // Show loading while checking authentication state
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+  const token = Cookies.get("authCookieName") || Cookies.get("token") || Cookies.get("auth") || Cookies.get("session");
+  
+  console.log('ProtectedRoute check:', { 
+    redirectIfAuth, 
+    hasToken: !!token, 
+    allCookies: document.cookie 
+  });
+
+  // Auth route → redirect if logged in
+  if (redirectIfAuth && token) {
+    console.log('Redirecting authenticated user to dashboard');
+    return <Navigate to="/dashboard" replace />;
   }
 
+  // Protected route → redirect if NOT logged in
+  if (!redirectIfAuth && !token) {
+    console.log('Redirecting unauthenticated user to login');
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+function App() {
+  const logout = () => {
+    // Clear authentication cookie
+    Cookies.remove('authCookieName');
+    // Redirect to login
+    window.location.href = '/login';
+  };
+
  return (
-    <div className="min-h-screen bg-gray-50">
-      <Routes>
-        {/* ✅ Public Room Route */}
-        <Route
-          path="/room/:roomId"
-          element={
-            <RoomView
-              roomId={window.location.pathname.split("/room/")[1] || ""}
-              onBack={() => window.history.back()}
-            />
-          }
-        />
+   <div className="min-h-screen bg-gray-50">
+     <Routes>
+       {/*  Public Room Route */}
+       <Route
+         path="/room/:roomId"
+         element={
+           <RoomView
+             roomId={window.location.pathname.split("/room/")[1] || ""}
+             onBack={() => window.history.back()}
+           />
+         }
+       />
 
-        {/* Auth Routes */}
-        <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
-        <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
-        <Route path="/forgot-password" element={!isAuthenticated ? <ForgotPassword /> : <Navigate to="/dashboard" />} />
+       {/* Auth Routes */}
+       <Route
+         path="/login"
+         element={
+           <ProtectedRoute redirectIfAuth>
+             <Login />
+           </ProtectedRoute>
+         }
+       />
+       <Route path="/register" element={
+        <ProtectedRoute redirectIfAuth>
+        <Register />
+        </ProtectedRoute>} />
+       <Route path="/forgot-password" element={
+        <ProtectedRoute redirectIfAuth>
+          <ForgotPassword />
+          </ProtectedRoute>} />
 
-        {/* Dashboard - Protected */}
-        <Route
-          path="/dashboard"
-          element={
-            isAuthenticated ? (
-              <>
-                <header className="bg-white shadow-sm border-b">
-                  <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <Link to="/">
-                        <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
-                          VoteApp
-                        </h1>
-                      </Link>
-                    </div>
-                    <button
-                      onClick={logout}
-                      className="text-gray-600 hover:text-gray-900"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                </header>
-                <main className="py-8 px-4">
-                  <Dashboard />
-                </main>
-              </>
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
+       {/* Dashboard - Protected */}
+       <Route
+         path="/dashboard"
+         element={
+           <ProtectedRoute> 
+             <>
+               <header className="bg-white shadow-sm border-b">
+                 <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+                   <div className="flex items-center gap-3">
+                     <Link to="/">
+                       <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
+                         VoteApp
+                       </h1>
+                     </Link>
+                   </div>
+                   <button
+                     onClick={logout}
+                     className="text-gray-600 hover:text-gray-900"
+                   >
+                     Logout
+                   </button>
+                 </div>
+               </header>
+               <main className="py-8 px-4">
+                 <Dashboard />
+               </main>
+             </>
+          </ProtectedRoute> 
+           
+         }
+       />
 
-        {/* Default fallback - redirect to login on first launch or if not authenticated */}
-        <Route path="*" element={<Navigate to={firstLaunch || !isAuthenticated ? "/login" : "/dashboard"} />} />
-      </Routes>
-    </div>
-  );
+       {/* Default fallback - redirect to login */}
+       <Route
+         path="*"
+         element={
+           <Navigate
+             to={"/login"}
+           />
+         }
+       />
+     </Routes>
+   </div>
+ );
 }
 
 export default App;

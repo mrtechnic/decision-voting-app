@@ -1,5 +1,5 @@
-import { useContext, useState } from "react";
-import { AuthContext, type AuthContextType } from "../contexts/AuthContext";
+import {  useState } from "react";
+
 import { Plus, XCircle, Shield } from "lucide-react";
 import { createRoom } from "../utils/api";
 
@@ -15,8 +15,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
   const [accreditedVoters, setAccreditedVoters] = useState<{ name: string; phoneNumber: string }[]>([
     { name: '', phoneNumber: '' }
   ]);
-    const authContext = useContext<AuthContextType | undefined>(AuthContext);
-    const token = authContext?.token;
+
   
 
   const addOption = () => {
@@ -67,7 +66,7 @@ const CreateRoomForm: React.FC<{ onClose: () => void; onSuccess: () => void }> =
         accreditedVoters: requireAccreditation ? accreditedVoters.filter(voter => 
           voter.name.trim() && voter.phoneNumber.trim()
         ) : []
-      }, token!);
+      });
 
       onSuccess();
       onClose();

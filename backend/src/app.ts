@@ -9,6 +9,8 @@ import authRoutes from './routes/authRoutes';
 import roomRoutes from './routes/roomRoutes';
 import voteRoutes from './routes/voteRoutes'
 import mongoose from 'mongoose';
+import cookieParser from "cookie-parser";
+import { frontendUrl } from "./utils/constants";
 
 const app = express();
 const server = createServer(app);
@@ -31,7 +33,8 @@ mongoose.connect(mongoUri)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB error:", err));
 
-app.use(cors({origin: "*"}));
+app.use(cookieParser())
+app.use(cors({origin: frontendUrl, credentials: true}));
 app.use(morgan('common'));
 app.use(express.json());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));

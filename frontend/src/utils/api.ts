@@ -7,18 +7,53 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
-// Add Authorization token if available
-const authHeader = (token?: string) =>
-  token ? { Authorization: `Bearer ${token}` } : {};
+api.interceptors.request.use(
+  async (config) => {
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const {
+      response: { status },
+    } = error;
+
+    if (status === 401) return await handleLogout();
+
+    return Promise.reject(error);
+  }
+);
+
+export async function handleLogout() {
+  return await logout().then(() => {
+    window.location.assign(
+      '/login'
+    );
+  });
+}
+
+export const logout = async () => {
+  try {
+    const response = await api.get('/logOut');
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: 'Something went wrong' };
+  }
+};
 
 export const signin = async (email: string, password: string) => {
   try {
       const response = await api.post('/auth/login', { email, password });
   return response.data;
   } catch (error: any) {
-    throw error.response?.data || { message: 'SOmething went wrong'};
+    throw error.response?.data || { message: 'Something went wrong'};
   }
 
 };
@@ -32,9 +67,8 @@ export const signup = async (email: string, password: string, name: string) => {
   }
 };
 
-export const createRoom = async (roomData: any, token: string) => {
+export const createRoom = async (roomData: any) => {
   const response = await api.post('/rooms', roomData, {
-    headers: authHeader(token),
   });
   return response.data;
 };
@@ -50,33 +84,35 @@ export const vote = async (
   token?: string,
   phoneNumber?: string
 ) => {
+  const headers: Record<string, string> = {};
+  if(token) headers['Authorization'] = `Bearer ${token}`;
   const response = await api.post(
     `/rooms/${roomId}/vote`,
     { optionId, phoneNumber },
-    {
-      headers: authHeader(token),
-    }
   );
   return response.data;
 };
 
-export const getMyRooms = async (token?: string) => {
+export const getMyRooms = async () => {
   const response = await api.get('/rooms/my-rooms', {
-    headers: authHeader(token),
   });
   return response.data;
 };
 
 export const getLiveTallies = async (roomId: string, token?: string) => {
+  const headers: Record<string, string> = {};
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await api.get(`/rooms/${roomId}/tallies`, {
-    headers: authHeader(token),
   });
   return response.data;
 };
 
-export const deleteRoom = async (roomId: string, token: string) => {
+export const deleteRoom = async (roomId: string) => {
   const response = await api.delete(`/rooms/${roomId}`, {
-    headers: authHeader(token),
   });
   return response.data;
 };
@@ -97,18 +133,16 @@ export const verifyOTP = async (roomId: string, phoneNumber: string, otp: string
   return response.data;
 };
 
-export const addAccreditedVoters = async (roomId: string, voters: any[], token: string) => {
+export const addAccreditedVoters = async (roomId: string, voters: any[]) => {
   const response = await api.post(`/rooms/${roomId}/add-accredited-voters`, {
     voters
   }, {
-    headers: authHeader(token),
   });
   return response.data;
 };
 
-export const getAccreditedVoters = async (roomId: string, token: string) => {
+export const getAccreditedVoters = async (roomId: string) => {
   const response = await api.get(`/rooms/${roomId}/accredited-voters`, {
-    headers: authHeader(token),
   });
   return response.data;
 };
